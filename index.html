@@ -1,0 +1,270 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Happy Birthday Brother</title>
+
+<style>
+:root{
+  --bg:#070a18;
+  --card:#13183a;
+  --accent:#6ee7ff;
+  --text:#fff;
+  --muted:#a5acd6;
+}
+
+*{
+  box-sizing:border-box;
+  font-family:Inter,system-ui,sans-serif;
+}
+
+body{
+  margin:0;
+  height:100vh;
+  overflow:hidden;
+  background:radial-gradient(circle at top,#18206f,#050713);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--text);
+}
+
+canvas{
+  position:fixed;
+  inset:0;
+  z-index:0;
+}
+
+.card{
+  z-index:1;
+  width:480px;
+  background:linear-gradient(180deg,var(--card),#0b0f2a);
+  border-radius:24px;
+  padding:46px;
+  box-shadow:0 50px 120px rgba(0,0,0,.75);
+  text-align:center;
+}
+
+h1{margin-bottom:8px}
+.sub{
+  color:var(--muted);
+  font-size:14px;
+  margin-bottom:30px;
+}
+
+.message{
+  min-height:90px;
+  font-size:17px;
+  line-height:1.6;
+  opacity:0;
+}
+
+.show{
+  opacity:1;
+  animation:fadeUp .8s ease forwards;
+}
+
+@keyframes fadeUp{
+  from{transform:translateY(25px)}
+  to{transform:translateY(0)}
+}
+
+img{
+  width:160px;
+  height:160px;
+  border-radius:50%;
+  object-fit:cover;
+  border:3px solid #fff;
+  display:none;
+  margin:22px auto;
+}
+
+button{
+  margin-top:20px;
+  padding:14px 42px;
+  border:none;
+  border-radius:40px;
+  background:linear-gradient(135deg,#6ee7ff,#b983ff);
+  color:#000;
+  font-weight:600;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="c"></canvas>
+
+<!-- 🔊 CHANGE SONG PATH -->
+<audio id="bgMusic" src="nanunelo.mp3" loop></audio>
+
+<div class="card">
+  <h1>🎂 Happy Birthday</h1>
+  <div class="sub">Each click unlocks a moment</div>
+
+  <!-- 🧾 EDITABLE MESSAGES -->
+  <div id="messages" style="display:none">
+    <p>🎉 Happy birthday brother, be happy always 😊</p>
+    <p>🤝 Thank you for being my best friend 💙</p>
+    <p>💪 I trust you because you became my strength and brother 🤗</p>
+    <p>🫂 I will always be with you 💯,no matters what happens💖</p>
+    <p>🛠️ If you need help in any problem, tell me anytime 📞</p>
+    <p>🥇 My first priority is you, my brother ❤️</p>
+    <p>🎂 Once again, wishing you many more happy birthdays 🎊</p>
+  </div>
+
+  <div id="msg" class="message"></div>
+
+  <!-- 🖼️ IMAGE -->
+  <img src="image.jpeg" id="photo">
+
+  <button id="btn">Start 🎁</button>
+</div>
+
+<script>
+/* ---------- Message System ---------- */
+const texts = [...document.querySelectorAll("#messages p")].map(p => p.innerHTML);
+let i = 0;
+
+/* ---------- Audio Control ---------- */
+const music = document.getElementById("bgMusic");
+music.volume = 0;
+
+function fadeAudio(target){
+  const step = (target - music.volume) / 40;
+  let t = setInterval(()=>{
+    music.volume += step;
+    if(Math.abs(music.volume - target) < .02){
+      music.volume = target;
+      clearInterval(t);
+    }
+  },50);
+}
+
+/* ---------- Canvas Particles ---------- */
+const c = document.getElementById("c");
+const x = c.getContext("2d");
+
+resize();
+window.onresize = resize;
+
+function resize(){
+  c.width = innerWidth;
+  c.height = innerHeight;
+}
+
+let ambient = [], bursts = [], fireworks = [];
+
+class P{
+  constructor(x,y,vx,vy,r,l){
+    this.x=x; this.y=y;
+    this.vx=vx; this.vy=vy;
+    this.r=r; this.l=l;
+  }
+  u(){
+    this.x+=this.vx;
+    this.y+=this.vy;
+    this.l--;
+  }
+  d(){
+    x.fillStyle = `rgba(255,255,255,${this.l/100})`;
+    x.beginPath();
+    x.arc(this.x,this.y,this.r,0,Math.PI*2);
+    x.fill();
+  }
+}
+
+/* Ambient particles */
+for(let k=0;k<120;k++){
+  ambient.push(new P(Math.random()*c.width,Math.random()*c.height,0,.2,1,9999));
+}
+
+function burst(power){
+  for(let k=0;k<power;k++){
+    bursts.push(new P(
+      innerWidth/2,
+      innerHeight/2,
+      (Math.random()-.5)*4,
+      (Math.random()-.5)*4,
+      2,
+      80
+    ));
+  }
+}
+
+function firework(){
+  let cx = Math.random()*c.width;
+  let cy = Math.random()*c.height/2;
+  for(let k=0;k<120;k++){
+    fireworks.push(new P(
+      cx,cy,
+      Math.cos(k)*3,
+      Math.sin(k)*3,
+      2,
+      100
+    ));
+  }
+}
+
+function loop(){
+  x.clearRect(0,0,c.width,c.height);
+
+  ambient.forEach(p=>{
+    p.u();
+    if(p.y > c.height) p.y = 0;
+    p.d();
+  });
+
+  bursts = bursts.filter(p=>p.l>0);
+  fireworks = fireworks.filter(p=>p.l>0);
+
+  bursts.forEach(p=>{p.u();p.d();});
+  fireworks.forEach(p=>{p.u();p.d();});
+
+  requestAnimationFrame(loop);
+}
+loop();
+
+/* ---------- Interaction ---------- */
+document.getElementById("btn").onclick = () => {
+  const box = document.getElementById("msg");
+  const photo = document.getElementById("photo");
+
+  if(music.paused){
+    music.play();
+    fadeAudio(.5);
+  }
+
+  box.innerHTML = texts[i];
+  box.className = "message show";
+
+  burst(40);
+
+  /* ✅ IMAGE ONLY ON 4TH INTERFACE */
+  if(i === 3){
+    photo.style.display = "block";
+  } else {
+    photo.style.display = "none";
+  }
+
+  if(i >= 5){
+    firework();
+    fadeAudio(.8);
+  }
+
+  i++;
+
+  if(i === texts.length){
+    document.getElementById("btn").innerText = "Restart 🔁";
+    i = 0;
+    fadeAudio(.3);
+    photo.style.display = "none";
+  } else {
+    document.getElementById("btn").innerText = "Next ➜";
+  }
+};
+</script>
+
+</body>
+</html>
